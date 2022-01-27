@@ -1,0 +1,59 @@
+---
+title: '2022-01-18_chocolate'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(maps)
+library(gganimate)
+library(gifski)
+```
+
+
+```{r load and edit data}
+
+#loading the data
+chocolate <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-18/chocolate.csv')
+
+chocolate <- chocolate %>% mutate(cocoa_percent = as.numeric(str_replace_all(cocoa_percent, "%", "")),
+                                  review_date = as.integer(review_date))
+
+```
+
+
+```{r cocoapercent/rating by year}
+#show how average rating (by cocoa %) may have changed over the years
+
+#making data to feed into the gif
+rating_perc_data <- chocolate %>%
+  group_by(cocoa_percent, review_date) %>% 
+  summarise(rating_avr = mean(rating)) %>% 
+  as.data.frame()
+
+#make the basic graph
+rating_perc_graph <- rating_perc_data %>% 
+  ggplot2::ggplot(aes(x=cocoa_percent, y=rating_avr)) + 
+  geom_bar(stat = "identity", width = .5, fill = "brown") +
+  labs(x = "Chocolate Cocoa Percentage", y = "Average rating (1-5)") +
+  ggtitle("Average rating of Chocolates by Cocoa percentage, shown by year 2006 to 2021") +
+  theme_classic() 
+
+#define what the the animated variable will be
+rating_perc_graph.animate = rating_perc_graph +
+  transition_time(review_date) +
+  #labs to show what year's data is shown at the time
+  labs(subtitle = "Year: {frame_time}") +
+  #easy_aes(linear) so the gif goes with continuous speed
+  ease_aes('linear')
+
+#making the animation and rendering
+animate(rating_perc_graph.animate, duration = 15 , fps = 20,  width = 1200, height = 1000, end_pause = 30, renderer = gifski_renderer())  
+
+#saving the gif to defined file and directory
+anim_save("rating_perc_year.gif", path = "C:/Users/luise/OneDrive - University of Sussex/Placement 21.22/R/tidyTuesday/gifs")
+```
+
